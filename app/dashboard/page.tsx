@@ -1,7 +1,9 @@
-import Link from "next/link"
+import { Suspense } from "react"
 import { FileText, DollarSign, Clock, Calendar, PlusCircle, GitBranch } from 'lucide-react'
+import { createClient } from "@/lib/supabase/server"
 
 import { Button } from "@/components/ui/button"
+import { LinkButton } from "@/components/ui/link-button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Table,
@@ -12,24 +14,96 @@ import {
   TableRow,
 } from "@/components/ui/table"
 
-// Mock data for active workflows
-const activeWorkflows = [
-  { id: 1, name: 'Contract Approval - Acme Corp', currentStep: 'Review', progress: 50 },
-  { id: 2, name: 'Invoice Processing - TechGiant', currentStep: 'Approval', progress: 75 },
-  { id: 3, name: 'Proposal Review - StartUp Hub', currentStep: 'Draft', progress: 25 },
-]
+// Async component to fetch and display recent documents
+async function RecentDocuments() {
+  const supabase = createClient()
+  
+  const { data: documents } = await supabase
+    .from('documents')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(3)
+
+  return (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Name</TableHead>
+          <TableHead>Date</TableHead>
+          <TableHead>Status</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {documents?.map((doc) => (
+          <TableRow key={doc.id}>
+            <TableCell>{doc.title}</TableCell>
+            <TableCell>{new Date(doc.created_at).toLocaleDateString()}</TableCell>
+            <TableCell>
+              <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium
+                ${doc.status === 'completed' ? 'bg-green-100 text-green-800' : 
+                  doc.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
+                  'bg-blue-100 text-blue-800'}`}>
+                {doc.status}
+              </span>
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  )
+}
+
+// Async component to fetch and display active workflows
+async function ActiveWorkflows() {
+  const supabase = createClient()
+  
+  const { data: workflows } = await supabase
+    .from('workflows')
+    .select('*')
+    .eq('status', 'active')
+    .order('created_at', { ascending: false })
+    .limit(3)
+
+  return (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Workflow</TableHead>
+          <TableHead>Current Step</TableHead>
+          <TableHead>Progress</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {workflows?.map((workflow) => (
+          <TableRow key={workflow.id}>
+            <TableCell>{workflow.name}</TableCell>
+            <TableCell>{workflow.current_step}</TableCell>
+            <TableCell>
+              <div className="flex items-center">
+                <div className="w-full bg-gray-200 rounded-full h-2.5 mr-2">
+                  <div
+                    className="bg-blue-600 h-2.5 rounded-full"
+                    style={{ width: `${workflow.progress}%` }}
+                  ></div>
+                </div>
+                <span className="text-sm">{workflow.progress}%</span>
+              </div>
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  )
+}
 
 export default function DashboardPage() {
   return (
     <div className="flex-1 space-y-8 p-8 pt-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <Button asChild>
-          <Link href="/documents/upload">
-            <PlusCircle className="mr-2 h-4 w-4" />
-            New Document
-          </Link>
-        </Button>
+        <LinkButton href="/documents/upload" iconName="PlusCircle">
+          New Document
+        </LinkButton>
       </div>
 
       {/* Key Performance Indicators */}
@@ -84,15 +158,15 @@ export default function DashboardPage() {
           <CardTitle>Quick Actions</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-4">
-          <Button asChild>
-            <Link href="/documents/upload">Upload Document</Link>
-          </Button>
-          <Button asChild>
-            <Link href="/documents/create">Create Document</Link>
-          </Button>
-          <Button asChild variant="outline">
-            <Link href="/documents">View All Documents</Link>
-          </Button>
+          <LinkButton href="/documents/upload">
+            Upload Document
+          </LinkButton>
+          <LinkButton href="/documents/create">
+            Create Document
+          </LinkButton>
+          <LinkButton href="/documents" variant="outline">
+            View All Documents
+          </LinkButton>
         </CardContent>
       </Card>
 
@@ -125,51 +199,16 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Last Documents */}
+        {/* Recent Documents */}
         <Card>
           <CardHeader>
             <CardTitle>Recent Documents</CardTitle>
             <CardDescription>Recently processed documents</CardDescription>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                <TableRow>
-                  <TableCell>Financial Report Q2 2023</TableCell>
-                  <TableCell>2023-06-15</TableCell>
-                  <TableCell>
-                    <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
-                      Completed
-                    </span>
-                  </TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell>Employee Handbook v2</TableCell>
-                  <TableCell>2023-06-14</TableCell>
-                  <TableCell>
-                    <span className="inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-medium text-yellow-800">
-                      Pending Signature
-                    </span>
-                  </TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell>Project Proposal: AI Integration</TableCell>
-                  <TableCell>2023-06-13</TableCell>
-                  <TableCell>
-                    <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">
-                      In Review
-                    </span>
-                  </TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
+            <Suspense fallback={<div>Loading documents...</div>}>
+              <RecentDocuments />
+            </Suspense>
           </CardContent>
         </Card>
       </div>
@@ -183,34 +222,9 @@ export default function DashboardPage() {
           <CardDescription>Summary of ongoing document workflows</CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Workflow</TableHead>
-                <TableHead>Current Step</TableHead>
-                <TableHead>Progress</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {activeWorkflows.map((workflow) => (
-                <TableRow key={workflow.id}>
-                  <TableCell>{workflow.name}</TableCell>
-                  <TableCell>{workflow.currentStep}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center">
-                      <div className="w-full bg-gray-200 rounded-full h-2.5 mr-2">
-                        <div
-                          className="bg-blue-600 h-2.5 rounded-full"
-                          style={{ width: `${workflow.progress}%` }}
-                        ></div>
-                      </div>
-                      <span className="text-sm">{workflow.progress}%</span>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <Suspense fallback={<div>Loading workflows...</div>}>
+            <ActiveWorkflows />
+          </Suspense>
         </CardContent>
       </Card>
     </div>

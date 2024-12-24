@@ -1,13 +1,14 @@
-"use client"
-
+import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
-import { AppSidebar } from "@/components/sidebar"
-import { cn } from "@/lib/utils"
-import { SidebarProvider } from "@/components/ui/sidebar"
+import './globals.css'
+import { AppLayout } from '@/components/layout/AppLayout'
 
-import "@/styles/globals.css"
+const inter = Inter({ subsets: ['latin'] })
 
-const inter = Inter({ subsets: ["latin"] })
+export const metadata: Metadata = {
+  title: 'DMS - Document Management System',
+  description: 'A modern document management system',
+}
 
 export default function RootLayout({
   children,
@@ -15,16 +16,11 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={cn(inter.className, "min-h-screen")}>
-        <SidebarProvider>
-          <div className="flex min-h-screen">
-            <AppSidebar />
-            <main className="flex-1 overflow-x-hidden p-4">
-              {children}
-            </main>
-          </div>
-        </SidebarProvider>
+    <html lang="en">
+      <body className={inter.className}>
+        <AppLayout>
+          {children}
+        </AppLayout>
       </body>
     </html>
   )
